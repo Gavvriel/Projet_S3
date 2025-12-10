@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Liste des annonces</title>
+</head>
+<body>
+
+<h1>Liste des annonces</h1>
+
+{% if session.get("username") %}
+    <p>Connecté : {{ session["username"] }} ({{ session["role"] }})</p>
+    <p><a href="{{ url_for('logout') }}">Se déconnecter</a></p>
+{% else %}
+    <p><a href="{{ url_for('login') }}">Se connecter</a></p>
+    <p><a href="{{ url_for('register') }}">Créer un compte</a></p>
+{% endif %}
+
+<hr>
+
+{% if annonces %}
+    {% for a in annonces %}
+        <h2>{{ a["titre"] }}</h2>
+        <p><strong>Ville :</strong> {{ a["ville"] or "Non précisé" }}</p>
+        <p><strong>Loyer :</strong> {{ a["loyer"] or "Non précisé" }} €</p>
+        <p>{{ a["description"] }}</p>
+        <p><em>Publiée par {{ a["auteur"] }} le {{ a["date_creation"] }}</em></p>
+        <hr>
+    {% endfor %}
+{% else %}
+    <p>Aucune annonce pour l'instant.</p>
+{% endif %}
+
+<p><a href="{{ url_for('home') }}">Retour à l'accueil</a></p>
+
+</body>
+</html>

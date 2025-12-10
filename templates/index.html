@@ -6,9 +6,17 @@
 </head>
 <body>
 
-<h1>Bienvenue sur le site</h1>
+<h1>Accueil</h1>
 
-<p><a href="{{ url_for('login') }}">Se connecter</a></p>
+<p><a href="{{ url_for('annonces') }}">Voir les annonces</a></p>
+
+{% if session.get("username") %}
+    <p>Connecté en tant que {{ session["username"] }} ({{ session["role"] }})</p>
+    <a href="{{ url_for('logout') }}">Se déconnecter</a>
+{% else %}
+    <p><a href="{{ url_for('login') }}">Se connecter</a></p>
+    <p><a href="{{ url_for('register') }}">Créer un compte</a></p>
+{% endif %}
 
 </body>
 </html>
