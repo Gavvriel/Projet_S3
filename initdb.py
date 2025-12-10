@@ -1,14 +1,23 @@
 import sqlite3
 import hashlib
 
-conn = sqlite3.connect("base.db")
-cursor = conn.cursor()
+DB_NAME = "base.db"
 
-# Supprime la table si elle existe déjà
-cursor.execute("DROP TABLE IF EXISTS utilisateurs")
+def hash_mdp(mdp):
+    return hashlib.sha256(mdp.encode()).hexdigest()
 
-# Création de la table
-cursor.execute("""
+conn = sqlite3.connect(DB_NAME)
+cur = conn.cursor()
+
+# Activer les clés étrangères (utile pour les relations)
+cur.execute("PRAGMA foreign_keys = ON;")
+
+# On repart propre
+cur.execute("DROP TABLE IF EXISTS annonces;")
+cur.execute("DROP TABLE IF EXISTS utilisateurs;")
+
+# Table utilisateurs
+cur.execute("""
 CREATE TABLE utilisateurs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
@@ -17,24 +26,49 @@ CREATE TABLE utilisateurs (
 )
 """)
 
-def hash_mdp(mdp):
-    return hashlib.sha256(mdp.encode()).hexdigest()
+# Table annonces
+cur.execute("""
+CREATE TABLE annonces (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    titre TEXT NOT NULL,
+    description TEXT NOT NULL,
+    ville TEXT,
+    loyer REAL,
+    auteur_id INTEGER NOT NULL,
+    date_creation TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(auteur_id) REFERENCES utilisateurs(id)
+)
+""")
 
-# Ajout admin
-cursor.execute("""
-INSERT INTO utilisateurs (username, password, role)
-VALUES (?, ?, ?)
-""", ("admin", hash_mdp("admin123"), "admin"))
+# Utilisateurs de test
+cur.execute(
+    "INSERT INTO utilisateurs (username, password, role) VALUES (?, ?, ?)",
+    ("admin", hash_mdp("admin123"), "admin")
+)
+cur.execute(
+    "INSERT INTO utilisateurs (username, password, role) VALUES (?, ?, ?)",
+    ("test", hash_mdp("1234"), "user")
+)
 
-# Ajout user
-cursor.execute("""
-INSERT INTO utilisateurs (username, password, role)
-VALUES (?, ?, ?)
-""", ("test", hash_mdp("1234"), "user"))
+# On récupère l'id de "test" pour lui attribuer des annonces
+cur.execute("SELECT id FROM utilisateurs WHERE username = ?", ("test",))
+row = cur.fetchone()
+test_id = row[0]
+
+# Quelques annonces de démo
+cur.execute("""
+INSERT INTO annonces (titre, description, ville, loyer, auteur_id)
+VALUES (?, ?, ?, ?, ?)
+""", ("Colocation proche université", "Grande chambre dans appart 3 pièces.", "Nanterre", 550, test_id))
+
+cur.execute("""
+INSERT INTO annonces (titre, description, ville, loyer, auteur_id)
+VALUES (?, ?, ?, ?, ?)
+""", ("Chambre à louer à Paris", "Coloc calme, métro ligne 1.", "Paris", 700, test_id))
 
 conn.commit()
 conn.close()
 
-print("Base créée !")
+print("Base recréée avec utilisateurs + annonces.")
 print("Admin : admin / admin123")
 print("User  : test / 1234")
